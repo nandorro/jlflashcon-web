@@ -60,3 +60,4 @@ code{background:var(--bg);padding:1px 5px;border-radius:4px}
   #list .who{max-width:50%;text-align:left}
   #list .btns{margin-left:auto}
 }
+.range{display:flex;gap:6px;align-items:center;flex-wrap:wrap}.range label{flex-direction:row;align-items:center;gap:4px;color:var(--ink)}.range input{width:76px;flex:none}

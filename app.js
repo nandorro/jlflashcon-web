@@ -173,8 +173,11 @@ function renderList() {
 }
 function canAll() { return st.entries.length > 0 && st.entries[0].kind !== "playlist"; }
 function updateAllButtons() {
+  if (st.entries.length && st.entries[0].kind !== "playlist" && $("r-bis").dataset.n !== String(st.entries.length)) {
+    $("r-bis").dataset.n = st.entries.length; $("r-ab").value = 1; $("r-bis").value = st.entries.length;
+  }
   const on = canAll() && !st.busy;
-  $("b-all-mp3").disabled = !on; $("b-all-mp4").disabled = !on;
+  $("b-all-mp3").disabled = !on; $("b-all-mp4").disabled = !on; $("b-range").disabled = !on;
 }
 
 /* ---------- menu copiar (boton derecho / pulsacion larga) ---------- */
@@ -354,6 +357,14 @@ $("x-pl").onclick = () => { $("plurl").value = ""; st.plTok++; $("b-load").disab
 $("x-sv").onclick = () => { $("q-video").value = $("a-video").value = ""; cancelSearch("search_video"); $("q-video").focus(); };
 $("x-sl").onclick = () => { $("q-list").value = $("a-list").value = ""; cancelSearch("search_list"); $("q-list").focus(); };
 $("b-all-mp3").onclick = () => download(st.entries.filter((e) => e.kind !== "playlist").map((e) => e.id), "mp3");
+$("b-range").onclick = () => {
+  const ids = st.entries.filter((e) => e.kind !== "playlist").map((e) => e.id);
+  let a = parseInt($("r-ab").value, 10) || 1, b = parseInt($("r-bis").value, 10) || ids.length;
+  if (a > b) [a, b] = [b, a];
+  const sel = ids.slice(a - 1, b);
+  if (!sel.length) { $("status").textContent = `No hay vídeos entre el ${a} y el ${b} (la lista tiene ${ids.length}).`; return; }
+  download(sel, "mp4");
+};
 $("b-all-mp4").onclick = () => download(st.entries.filter((e) => e.kind !== "playlist").map((e) => e.id), "mp4");
 $("b-new").onclick = () => window.open(location.href, "_blank", "noopener");
 $("b-settings").onclick = () => { $("srv-url").value = store.get("jl_server", DEFAULT_SERVER); $("dlg-settings").showModal(); };
