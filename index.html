@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>jlflashcon</title>
+<meta name="description" content="Visor de YouTube sin anuncios con descarga MP4/MP3, listas y buscadores">
+<meta name="theme-color" content="#1b1b1f">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <h1><img src="icons/icon-192.png" alt="" width="28" height="28"> jlflashcon</h1>
+  <div class="head-right">
+    <span id="srv" class="chip" title="Estado del servidor de descargas">…</span>
+    <button id="b-settings" title="Servidor de descargas">⚙</button>
+    <button id="b-new" title="Abrir otra ventana para descargar a la vez">🗗 Nueva ventana</button>
+  </div>
+</header>
+
+<main>
+  <!-- barra 1: video suelto -->
+  <form class="bar" id="f-video">
+    <input id="url" placeholder="URL de un vídeo de YouTube (o ID) y Enter" autocomplete="off">
+    <button type="submit">▶ Ver</button>
+    <button type="button" class="x" id="x-url" title="Cerrar / vaciar">✕</button>
+  </form>
+
+  <!-- barra 2: lista -->
+  <form class="bar" id="f-list">
+    <input id="plurl" placeholder="URL de una lista de reproducción (playlist) y Enter" autocomplete="off">
+    <button type="submit" id="b-load">📃 Cargar</button>
+    <button type="button" class="x" id="x-pl" title="Cerrar / vaciar">✕</button>
+  </form>
+
+  <!-- barra 3: buscadores -->
+  <div class="bar3">
+    <form class="bar" id="f-sv">
+      <input id="q-video" data-hist="video_title" placeholder="🔎 Título del vídeo" autocomplete="off">
+      <input id="a-video" data-hist="video_author" placeholder="👤 Autor" autocomplete="off">
+      <button type="submit" id="b-sv">Buscar</button>
+      <button type="button" class="x" id="x-sv" title="Vaciar / cancelar">✕</button>
+    </form>
+    <form class="bar" id="f-sl">
+      <input id="q-list" data-hist="list_title" placeholder="🔎 Nombre de la lista" autocomplete="off">
+      <input id="a-list" data-hist="list_author" placeholder="👤 Autor" autocomplete="off">
+      <button type="submit" id="b-sl">Buscar</button>
+      <button type="button" class="x" id="x-sl" title="Vaciar / cancelar">✕</button>
+    </form>
+  </div>
+
+  <!-- reproductor fijo + controles -->
+  <section class="player-row">
+    <div class="player" id="player"><div class="ph">jlflashcon</div></div>
+    <div class="side">
+      <label>Calidad
+        <select id="quality"><option>1080p</option><option>720p</option><option>480p</option><option>360p</option><option>1440p</option><option>2160p</option></select>
+      </label>
+      <button id="b-all-mp3" disabled>⬇ Toda la lista en MP3</button>
+      <button id="b-all-mp4" disabled>⬇ Toda la lista en MP4</button>
+      <div id="bar-wrap" hidden><progress id="bar" max="100" value="0"></progress></div>
+    </div>
+  </section>
+
+  <ul id="list" aria-live="polite"></ul>
+  <p id="status" role="status"></p>
+</main>
+
+<div id="menu" class="ctx" hidden></div>
+<div id="hist" class="ctx" hidden></div>
+
+<dialog id="dlg-settings">
+  <form method="dialog">
+    <h2>Servidor de descargas</h2>
+    <p>La web no puede descargar de YouTube por sí sola. Ejecuta <code>servidor/jlflashcon_server.py</code>
+       en tu ordenador (o en un servidor tuyo) y escribe aquí su dirección. Sin servidor puedes ver vídeos,
+       pero las descargas y (a veces) las búsquedas no funcionan.</p>
+    <input id="srv-url" placeholder="http://localhost:8765" autocomplete="off">
+    <menu>
+      <button value="cancel">Cancelar</button>
+      <button id="srv-save" value="ok">Guardar y comprobar</button>
+    </menu>
+  </form>
+</dialog>
+
+<script src="app.js"></script>
+</body>
+</html>
