@@ -121,7 +121,7 @@ async function apiSearch(kind, title, author, channel) {
       const ch = (await pipedGet(`/search?q=${encodeURIComponent(author)}&filter=channels`)).items?.[0];
       if (!ch) return [];
       const c = await pipedGet(ch.url);
-      return (c.relatedStreams || []).slice(0, MAX_RESULTS).map((s) => ({
+      return (c.relatedStreams || []).map((s) => ({
         id: pid(s.url, "v"), title: s.title, author: c.name || author, authorUrl: ch.url }));
     }
     const r = await pipedGet(`/search?q=${encodeURIComponent((title + " " + author).trim())}&filter=videos`);

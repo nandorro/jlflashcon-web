@@ -73,8 +73,7 @@ def norm(text: str) -> str:
 # ---------------------------------------------------------------- busqueda (misma logica que la app de escritorio)
 
 def flat_opts():
-    return {"extract_flat": "in_playlist", "quiet": True, "no_warnings": True, "skip_download": True,
-            "playlistend": 100}
+    return {"extract_flat": "in_playlist", "quiet": True, "no_warnings": True, "skip_download": True}
 
 
 def find_channels(ydl, author):
@@ -140,8 +139,6 @@ def search(kind, title, author, channel_url=""):
                 channels = []
             seen = set()
             for curl, cname in channels:
-                if len(out) >= MAX_RESULTS:
-                    break
                 try:
                     if kind == "video":
                         url = f"{curl}/search?query={quote(title)}" if title else f"{curl}/videos"
@@ -166,11 +163,11 @@ def search(kind, title, author, channel_url=""):
                    else f"https://www.youtube.com/results?search_query={quote(title)}&sp=EgIQAw%3D%3D")
             info = ydl.extract_info(url, download=False)
             out = collect(kind, info.get("entries"), "", "", [], urls=urls)
-    return out[:MAX_RESULTS]
+    return out if author else out[:MAX_RESULTS]
 
 
 def playlist(pid):
-    with yt_dlp.YoutubeDL(flat_opts() | {"playlistend": 500}) as ydl:
+    with yt_dlp.YoutubeDL(flat_opts()) as ydl:
         info = ydl.extract_info(f"https://www.youtube.com/playlist?list={pid}", download=False)
     default = info.get("channel") or info.get("uploader") or ""
     default_url = info.get("channel_url") or info.get("uploader_url") or ""
