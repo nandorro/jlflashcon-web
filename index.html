@@ -18,6 +18,7 @@
     <span id="srv" class="chip" title="Estado del servidor de descargas">…</span>
     <button id="b-settings" title="Servidor de descargas">⚙</button>
     <button id="b-new" title="Abrir otra ventana para descargar a la vez">🗗 Nueva ventana</button>
+    <button id="b-cmp" title="Comparar una carpeta con los vídeos de un canal">📂 Comparador</button>
   </div>
 </header>
 
@@ -91,6 +92,28 @@
   </form>
 </dialog>
 
+<dialog id="dlg-cmp" class="wide">
+  <h2>📂 Comparador de carpeta y canal</h2>
+  <button id="cmp-pick">Elegir carpeta…</button>
+  <div id="cmp-dir" class="muted"></div>
+  <div class="stats3" id="cmp-scan" hidden>
+    <div><b id="cmp-folders">0</b>carpetas</div><div><b id="cmp-files">0</b>ficheros</div><div><b id="cmp-videos">0</b>vídeos</div>
+  </div>
+  <input id="cmp-chan" placeholder="Canal de YouTube: @usuario o URL" autocomplete="off">
+  <button id="cmp-compare" disabled>Comparar y ver los que faltan</button>
+  <div id="cmp-res" hidden>
+    <div class="stats3">
+      <div><b id="cmp-total">0</b>en el canal</div><div><b id="cmp-have">0</b>los tienes</div><div><b id="cmp-miss">0</b>faltan</div>
+    </div>
+    <button id="cmp-down" disabled>⬇ Descargar los que faltan</button>
+    <button id="cmp-pause" hidden>⏸ Pausar descargas</button>
+    <ul id="cmp-list"></ul>
+  </div>
+  <p id="cmp-msg" class="muted" role="status"></p>
+  <menu><button id="cmp-close">Cerrar</button></menu>
+</dialog>
+
 <script src="app.js"></script>
+<script src="comparador.js"></script>
 </body>
 </html>

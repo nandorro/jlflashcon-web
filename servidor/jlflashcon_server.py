@@ -182,10 +182,31 @@ def playlist(pid):
     return {"title": info.get("title") or "lista", "entries": entries}
 
 
+def channel_videos(url):
+    """Todos los videos de un canal (para el comparador)."""
+    host = (urlparse(url).hostname or "").lower()
+    if not (host == "youtube.com" or host.endswith(".youtube.com")):
+        raise ValueError("Solo se admiten canales de YouTube")
+    if not re.search(r"/(videos|streams|shorts|playlists)/?$", url):
+        url = url.rstrip("/") + "/videos"
+    with yt_dlp.YoutubeDL({**flat_opts(), "ignoreerrors": True}) as ydl:
+        info = ydl.extract_info(url, download=False) or {}
+    seen, vids = set(), []
+    for e in info.get("entries") or []:
+        vid = (e or {}).get("id", "")
+        if ID_RE.match(vid) and vid not in seen:
+            seen.add(vid)
+            vids.append({"id": vid, "title": e.get("title") or vid})
+    if not vids:
+        raise RuntimeError("No encontré vídeos en ese canal (¿URL correcta?)")
+    return {"channel": info.get("channel") or info.get("title") or "", "videos": vids}
+
+
 # ---------------------------------------------------------------- descarga
 
-def download(vid, kind, quality, folder):
-    opts = {"outtmpl": str(Path(folder) / "%(title).100s.%(ext)s"), "noplaylist": True, "quiet": True,
+def download(vid, kind, quality, folder, with_id=False):
+    name = "%(title).100s [%(id)s].%(ext)s" if with_id else "%(title).100s.%(ext)s"
+    opts = {"outtmpl": str(Path(folder) / name), "noplaylist": True, "quiet": True,
             "no_warnings": True, "windowsfilenames": True}
     if kind == "mp3":
         opts["format"] = "bestaudio/best"
@@ -264,6 +285,8 @@ class Handler(BaseHTTPRequestHandler):
                 if not PL_RE.match(pid):
                     return self.json(400, {"error": "Identificador de lista no válido"})
                 return self.json(200, playlist(pid))
+            if u.path == "/api/channel":
+                return self.json(200, channel_videos(q.get("url", "")))
             if u.path == "/api/download":
                 return self.do_download(q)
             return self.json(404, {"error": "no existe"})
@@ -276,7 +299,7 @@ class Handler(BaseHTTPRequestHandler):
             return self.json(400, {"error": "petición no válida"})
         tmp = tempfile.mkdtemp(prefix="jlflash_")
         try:
-            f = download(vid, kind, q.get("q", "1080p"), tmp)
+            f = download(vid, kind, q.get("q", "1080p"), tmp, with_id=q.get("named") == "1")
             size = f.stat().st_size
             self.send_response(200)
             self.cors()

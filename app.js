@@ -66,7 +66,7 @@ async function fetchJson(url, ms = 15000, opts = {}) {
 function play(id) {
   st.playing = id;
   $("player").innerHTML = `<iframe src="https://www.youtube-nocookie.com/embed/${id}?autoplay=1&rel=0&playsinline=1"
-    title="Reproductor" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen
+    title="Reproductor" credentialless allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen
     referrerpolicy="strict-origin-when-cross-origin"></iframe>`;
   $("url").value = `https://www.youtube.com/watch?v=${id}`;
   highlight();
