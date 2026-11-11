@@ -12,6 +12,11 @@ como app desde el navegador: PWA). Es la versión web de jlflashcon v3.
 - ✕ en cada barra, historial al pulsar **espacio**, botón derecho / pulsación larga para copiar nombre o autor, **🗗 Nueva ventana** para descargar a la vez y aviso al cerrar con una descarga en curso.
 - Enlaces directos: `?v=ID` abre un vídeo y `?list=ID` una lista.
 
+## Ver sin anuncios
+YouTube pone anuncios al reproducirlo dentro de otra web (iframe). Hay dos formas de evitarlos:
+- **Con el servidor conectado** (casilla «Reproducir con mi servidor»): el vídeo se descarga en el servidor y se ve en un reproductor normal de la web, con la calidad elegida. La primera vez tarda unos segundos; después es instantáneo (queda en una caché temporal).
+- **Sin servidor** (casilla «Ver sin anuncios, pestaña nueva»): abre `youtube-nocookie.com/embed/ID` como página principal, que es lo que hace el truco de `yout-ube.com`.
+
 ## Descargas y búsquedas fiables: el servidor
 Una web no puede ejecutar yt-dlp ni ffmpeg. Por eso la descarga (y las búsquedas completas) usan un pequeño servidor tuyo:
 

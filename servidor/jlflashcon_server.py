@@ -17,6 +17,7 @@ import re
 import shutil
 import sys
 import tempfile
+import threading
 import unicodedata
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -202,6 +203,28 @@ def channel_videos(url):
     return {"channel": info.get("channel") or info.get("title") or "", "videos": vids}
 
 
+# ---------------------------------------------------------------- reproduccion sin anuncios
+
+CACHE_DIR = Path(tempfile.gettempdir()) / "jlflash_cache"
+_locks = {}
+_locks_guard = threading.Lock()
+
+
+def watch_file(vid, quality):
+    """Descarga el video (mp4 con sonido) a una cache y devuelve (ruta, titulo). Se ve en un <video> normal de la web:
+    no pasa por el reproductor de YouTube, asi que no hay anuncios. Repetir el mismo video es instantaneo."""
+    h = re.sub(r"\D", "", quality) or "480"
+    folder = CACHE_DIR / f"{vid}_{h}"
+    with _locks_guard:
+        lock = _locks.setdefault(folder.name, threading.Lock())
+    with lock:
+        files = list(folder.glob("*.mp4")) if folder.exists() else []
+        if not files:
+            folder.mkdir(parents=True, exist_ok=True)
+            files = [download(vid, "mp4", h, str(folder))]
+        return files[0]
+
+
 # ---------------------------------------------------------------- descarga
 
 def download(vid, kind, quality, folder, with_id=False):
@@ -287,11 +310,53 @@ class Handler(BaseHTTPRequestHandler):
                 return self.json(200, playlist(pid))
             if u.path == "/api/channel":
                 return self.json(200, channel_videos(q.get("url", "")))
+            if u.path in ("/api/watch", "/api/file"):
+                if not ID_RE.match(q.get("id", "")):
+                    return self.json(400, {"error": "petición no válida"})
+                f = watch_file(q["id"], q.get("q", "480p"))
+                if u.path == "/api/watch":
+                    return self.json(200, {"url": f"/api/file?id={q['id']}&q={quote(q.get('q', '480p'))}",
+                                           "title": f.stem})
+                return self.send_ranged(f)
             if u.path == "/api/download":
                 return self.do_download(q)
             return self.json(404, {"error": "no existe"})
         except Exception as e:  # noqa: BLE001
             return self.json(500, {"error": clean_error(e)})
+
+    def send_ranged(self, f):
+        """Sirve un mp4 con soporte de Range (necesario para que <video> avance y retroceda)."""
+        size = f.stat().st_size
+        start, end, code = 0, size - 1, 200
+        m = re.match(r"bytes=(\d*)-(\d*)", self.headers.get("Range") or "")
+        if m and (m.group(1) or m.group(2)):
+            if m.group(1):
+                start = int(m.group(1))
+                end = int(m.group(2)) if m.group(2) else size - 1
+            else:
+                start = max(0, size - int(m.group(2)))
+            end = min(end, size - 1)
+            code = 206
+        self.send_response(code)
+        self.cors()
+        self.send_header("Content-Type", "video/mp4")
+        self.send_header("Accept-Ranges", "bytes")
+        self.send_header("Content-Length", str(end - start + 1))
+        if code == 206:
+            self.send_header("Content-Range", f"bytes {start}-{end}/{size}")
+        self.end_headers()
+        try:
+            with open(f, "rb") as fh:
+                fh.seek(start)
+                left = end - start + 1
+                while left > 0:
+                    chunk = fh.read(min(65536, left))
+                    if not chunk:
+                        break
+                    self.wfile.write(chunk)
+                    left -= len(chunk)
+        except (BrokenPipeError, ConnectionResetError):
+            pass
 
     def do_download(self, q):
         vid, kind = q.get("id", ""), q.get("kind", "mp4")

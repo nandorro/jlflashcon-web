@@ -68,9 +68,32 @@ async function fetchJson(url, ms = 15000, opts = {}) {
    y no pone anuncios. Dentro de un iframe (como antes) si salen. Por eso por defecto se abre en pestana nueva. */
 const embedUrl = (id) => `https://www.youtube-nocookie.com/embed/${id}?playlist=${id}&autoplay=1&iv_load_policy=3&loop=1&rel=0`;
 const tabMode = () => { try { return localStorage.getItem("jl_tab") !== "0"; } catch (e) { return true; } };
+const srvMode = () => { try { return localStorage.getItem("jl_srvplay") !== "0"; } catch (e) { return true; } };
+/* Con el servidor conectado: el video se pide a yt-dlp y se ve en un <video> normal. Sin reproductor de YouTube = sin anuncios. */
+async function playLocal(id) {
+  $("player").innerHTML = `<div class="ph">Preparando el vídeo en tu servidor…</div>`;
+  setStatus("Preparando el vídeo (la primera vez tarda un poco; luego es instantáneo)…");
+  try {
+    const q = $("quality").value;
+    const r = await fetchJson(`${st.server}/api/watch?id=${encodeURIComponent(id)}&q=${encodeURIComponent(q)}`, 600000);
+    if (st.playing !== id) return;
+    const v = document.createElement("video");
+    v.controls = true; v.autoplay = true; v.playsInline = true; v.src = st.server + r.url;
+    v.style.cssText = "width:100%;height:100%;background:#000";
+    v.onerror = () => { if (st.playing === id) { setStatus("No pude reproducirlo desde el servidor; uso el reproductor de YouTube."); playEmbed(id); } };
+    $("player").innerHTML = ""; $("player").append(v);
+    setStatus(`▶ ${r.title} (${q}, sin anuncios)`);
+  } catch (e) { setStatus("Servidor: " + e.message + " — uso el reproductor de YouTube."); playEmbed(id); }
+}
+function playEmbed(id) {
+  $("player").innerHTML = `<iframe src="https://www.youtube-nocookie.com/embed/${id}?autoplay=1&rel=0&playsinline=1"
+    title="Reproductor" credentialless allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen
+    referrerpolicy="strict-origin-when-cross-origin"></iframe>`;
+}
 function play(id, userClick = true) {
   st.playing = id;
   $("url").value = `https://www.youtube.com/watch?v=${id}`;
+  if (st.server && srvMode()) { playLocal(id); highlight(); return; }
   let opened = null;
   if (tabMode() && userClick) {
     opened = window.open(embedUrl(id), "_blank");
@@ -371,6 +394,8 @@ $("x-pl").onclick = () => { $("plurl").value = ""; st.plTok++; $("b-load").disab
 $("x-sv").onclick = () => { $("q-video").value = $("a-video").value = ""; cancelSearch("search_video"); $("q-video").focus(); };
 $("x-sl").onclick = () => { $("q-list").value = $("a-list").value = ""; cancelSearch("search_list"); $("q-list").focus(); };
 $("b-all-mp3").onclick = () => download(st.entries.filter((e) => e.kind !== "playlist").map((e) => e.id), "mp3");
+$("c-srv").checked = srvMode();
+$("c-srv").onchange = () => { try { localStorage.setItem("jl_srvplay", $("c-srv").checked ? "1" : "0"); } catch (e) {} };
 $("c-tab").checked = tabMode();
 $("c-tab").onchange = () => { try { localStorage.setItem("jl_tab", $("c-tab").checked ? "1" : "0"); } catch (e) {} };
 $("b-range").onclick = () => {
