@@ -73,3 +73,4 @@ dialog.wide menu button{width:auto}
 #cmp-list li{padding:6px 2px;border-bottom:1px solid var(--line)}
 #cmp-list small{display:block;color:var(--muted)}
 #cmp-list small.bad{color:var(--accent)}
+.side label.chk{flex-direction:row;align-items:center;gap:6px;color:var(--ink)}.side label.chk input{flex:none;width:auto}

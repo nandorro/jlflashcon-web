@@ -63,12 +63,26 @@ async function fetchJson(url, ms = 15000, opts = {}) {
 }
 
 /* ---------- reproductor sin anuncios (youtube-nocookie) ---------- */
-function play(id) {
+/* El truco de yout-ube.com: esa pagina solo hace window.location = youtube-nocookie.com/embed/ID, es decir, abre el
+   reproductor como pagina PRINCIPAL (no dentro de otra web). Asi YouTube no ve una web de terceros ni sus cookies
+   y no pone anuncios. Dentro de un iframe (como antes) si salen. Por eso por defecto se abre en pestana nueva. */
+const embedUrl = (id) => `https://www.youtube-nocookie.com/embed/${id}?playlist=${id}&autoplay=1&iv_load_policy=3&loop=1&rel=0`;
+const tabMode = () => { try { return localStorage.getItem("jl_tab") !== "0"; } catch (e) { return true; } };
+function play(id, userClick = true) {
   st.playing = id;
-  $("player").innerHTML = `<iframe src="https://www.youtube-nocookie.com/embed/${id}?autoplay=1&rel=0&playsinline=1"
-    title="Reproductor" credentialless allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen
-    referrerpolicy="strict-origin-when-cross-origin"></iframe>`;
   $("url").value = `https://www.youtube.com/watch?v=${id}`;
+  let opened = null;
+  if (tabMode() && userClick) {
+    opened = window.open(embedUrl(id), "_blank");
+    if (opened) opened.opener = null;
+  }
+  if (opened) {
+    $("player").innerHTML = `<div class="ph"><a href="${embedUrl(id)}" target="_blank" rel="noopener" style="color:inherit">▶ Abierto sin anuncios en otra pestaña<br><small>pulsa aquí para abrirlo de nuevo</small></a></div>`;
+  } else {
+    $("player").innerHTML = `<iframe src="https://www.youtube-nocookie.com/embed/${id}?autoplay=1&rel=0&playsinline=1"
+      title="Reproductor" credentialless allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen
+      referrerpolicy="strict-origin-when-cross-origin"></iframe>`;
+  }
   highlight();
 }
 function resetPlayer() {
@@ -261,7 +275,7 @@ async function search(kind) {
     renderList();
     setStatus(st.entries.length ? `${st.entries.length} ${kind === "video" ? "vídeos" : "listas"} para «${label}»`
       : `Sin resultados para «${label}»: puedes volver a buscar`);
-    if (kind === "video" && st.entries.length && !st.playing) play(st.entries[0].id);
+    if (kind === "video" && st.entries.length && !st.playing) play(st.entries[0].id, false);
   } catch (e) {
     if (tok !== st.searchTok) return;
     setStatus(`No pude buscar: ${friendlyError(e.message)} (puedes volver a buscar)`);
@@ -291,7 +305,7 @@ async function loadPlaylist() {
     st.entries = r.entries.filter((e) => e.id).map((e) => ({ ...e, kind: "video" }));
     renderList();
     setStatus(st.entries.length ? `«${r.title}»: ${st.entries.length} vídeos` : "La lista está vacía o es privada");
-    if (st.entries.length && !st.playing) play(st.entries[0].id);
+    if (st.entries.length && !st.playing) play(st.entries[0].id, false);
   } catch (e) {
     if (tok === st.plTok) setStatus(`No pude cargar la lista: ${friendlyError(e.message)} (pulsa Cargar para reintentar)`);
   } finally { if (tok === st.plTok) $("b-load").disabled = false; }
@@ -357,6 +371,8 @@ $("x-pl").onclick = () => { $("plurl").value = ""; st.plTok++; $("b-load").disab
 $("x-sv").onclick = () => { $("q-video").value = $("a-video").value = ""; cancelSearch("search_video"); $("q-video").focus(); };
 $("x-sl").onclick = () => { $("q-list").value = $("a-list").value = ""; cancelSearch("search_list"); $("q-list").focus(); };
 $("b-all-mp3").onclick = () => download(st.entries.filter((e) => e.kind !== "playlist").map((e) => e.id), "mp3");
+$("c-tab").checked = tabMode();
+$("c-tab").onchange = () => { try { localStorage.setItem("jl_tab", $("c-tab").checked ? "1" : "0"); } catch (e) {} };
 $("b-range").onclick = () => {
   const ids = st.entries.filter((e) => e.kind !== "playlist").map((e) => e.id);
   let a = parseInt($("r-ab").value, 10) || 1, b = parseInt($("r-bis").value, 10) || ids.length;
@@ -380,7 +396,7 @@ $("quality").onchange = () => store.set("jl_quality", $("quality").value);
 /* ---------- arranque ---------- */
 initServer();
 const params = new URLSearchParams(location.search);       // ?v=ID o ?list=ID para abrir directo
-if (params.get("v") && ID_RE.test(params.get("v"))) play(params.get("v"));
+if (params.get("v") && ID_RE.test(params.get("v"))) play(params.get("v"), false);
 if (params.get("list") && PL_RE.test(params.get("list"))) { $("plurl").value = params.get("list"); loadPlaylist(); }
 if ("serviceWorker" in navigator && location.protocol.startsWith("http")) navigator.serviceWorker.register("sw.js").catch(() => {});
 
