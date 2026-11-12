@@ -78,7 +78,7 @@ async function playLocal(id) {
     const r = await fetchJson(`${st.server}/api/watch?id=${encodeURIComponent(id)}&q=${encodeURIComponent(q)}`, 600000);
     if (st.playing !== id) return;
     const v = document.createElement("video");
-    v.controls = true; v.autoplay = true; v.playsInline = true; v.src = st.server + r.url;
+    v.controls = true; v.controlsList = "nofullscreen"; v.autoplay = true; v.playsInline = true; v.src = st.server + r.url;
     v.style.cssText = "width:100%;height:100%;background:#000";
     v.onerror = () => { if (st.playing === id) { setStatus("No pude reproducirlo desde el servidor; uso el reproductor de YouTube."); playEmbed(id); } };
     $("player").innerHTML = ""; $("player").append(v);
@@ -87,7 +87,7 @@ async function playLocal(id) {
 }
 function playEmbed(id) {
   $("player").innerHTML = `<iframe src="https://www.youtube-nocookie.com/embed/${id}?autoplay=1&rel=0&playsinline=1"
-    title="Reproductor" credentialless allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen
+    title="Reproductor" credentialless allow="autoplay; encrypted-media; picture-in-picture"
     referrerpolicy="strict-origin-when-cross-origin"></iframe>`;
 }
 function play(id, userClick = true) {
@@ -103,7 +103,7 @@ function play(id, userClick = true) {
     $("player").innerHTML = `<div class="ph"><a href="${embedUrl(id)}" target="_blank" rel="noopener" style="color:inherit">▶ Abierto sin anuncios en otra pestaña<br><small>pulsa aquí para abrirlo de nuevo</small></a></div>`;
   } else {
     $("player").innerHTML = `<iframe src="https://www.youtube-nocookie.com/embed/${id}?autoplay=1&rel=0&playsinline=1"
-      title="Reproductor" credentialless allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen
+      title="Reproductor" credentialless allow="autoplay; encrypted-media; picture-in-picture"
       referrerpolicy="strict-origin-when-cross-origin"></iframe>`;
   }
   highlight();
@@ -427,4 +427,45 @@ if ("serviceWorker" in navigator && location.protocol.startsWith("http")) naviga
 
 // para las pruebas automaticas
 window.__jl = { st, search, loadPlaylist, download, play, videoId, playlistId, renderList, apiSearch };
+})();
+
+
+/* ---------- pantalla completa con lupas (como en IPTV Navideno): la imagen se ve entera o llena toda la pantalla ---------- */
+(() => {
+  const stage = $("stage");
+  const isFs = () => document.fullscreenElement === stage || document.webkitFullscreenElement === stage;
+  let fill = false;
+  function apply() {
+    const on = fill && isFs();
+    stage.classList.toggle("fill", on);
+    const W = innerWidth, H = innerHeight, r = W / H, k = 16 / 9;
+    const f = $("player").querySelector("iframe");
+    if (f) { f.style.transformOrigin = "50% 50%"; f.style.transform = on ? `scale(${Math.max(r / k, k / r)})` : ""; }
+  }
+  const setFill = (v) => { fill = v; apply(); };
+  $("z-in").onclick = () => setFill(true);
+  $("z-out").onclick = () => setFill(false);
+  $("z-fs").onclick = () => {
+    if (isFs()) (document.exitFullscreen || document.webkitExitFullscreen).call(document);
+    else (stage.requestFullscreen || stage.webkitRequestFullscreen).call(stage);
+  };
+  const onFs = () => { if (!isFs()) fill = false; apply(); };
+  document.addEventListener("fullscreenchange", onFs);
+  document.addEventListener("webkitfullscreenchange", onFs);
+  addEventListener("resize", apply);
+  new MutationObserver(apply).observe($("player"), { childList: true });
+  stage.addEventListener("wheel", (e) => { if (isFs()) setFill(e.deltaY < 0); }, { passive: true });
+  addEventListener("keydown", (e) => {
+    if (!isFs() || /^(INPUT|SELECT|TEXTAREA)$/.test(document.activeElement.tagName)) return;
+    if (e.key === "+") setFill(true); else if (e.key === "-") setFill(false);
+  });
+  let d0 = 0, fired = false;
+  const dist = (e) => Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+  stage.addEventListener("touchstart", (e) => { if (e.touches.length === 2) { d0 = dist(e); fired = false; } }, { passive: true });
+  stage.addEventListener("touchmove", (e) => {
+    if (e.touches.length === 2 && !fired && d0 > 10 && isFs()) {
+      const q = dist(e) / d0;
+      if (q > 1.2) { setFill(true); fired = true; } else if (q < 0.83) { setFill(false); fired = true; }
+    }
+  }, { passive: true });
 })();
