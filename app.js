@@ -87,7 +87,7 @@ async function playLocal(id) {
 }
 function playEmbed(id) {
   $("player").innerHTML = `<iframe src="https://www.youtube-nocookie.com/embed/${id}?autoplay=1&rel=0&playsinline=1"
-    title="Reproductor" credentialless allow="autoplay; encrypted-media; picture-in-picture"
+    title="Reproductor" credentialless allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen
     referrerpolicy="strict-origin-when-cross-origin"></iframe>`;
 }
 function play(id, userClick = true) {
@@ -103,7 +103,7 @@ function play(id, userClick = true) {
     $("player").innerHTML = `<div class="ph"><a href="${embedUrl(id)}" target="_blank" rel="noopener" style="color:inherit">▶ Abierto sin anuncios en otra pestaña<br><small>pulsa aquí para abrirlo de nuevo</small></a></div>`;
   } else {
     $("player").innerHTML = `<iframe src="https://www.youtube-nocookie.com/embed/${id}?autoplay=1&rel=0&playsinline=1"
-      title="Reproductor" credentialless allow="autoplay; encrypted-media; picture-in-picture"
+      title="Reproductor" credentialless allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen
       referrerpolicy="strict-origin-when-cross-origin"></iframe>`;
   }
   highlight();
@@ -432,6 +432,7 @@ window.__jl = { st, search, loadPlaylist, download, play, videoId, playlistId, r
 
 /* ---------- pantalla completa con lupas (como en IPTV Navideno): la imagen se ve entera o llena toda la pantalla ---------- */
 (() => {
+  const $ = (id) => document.getElementById(id);
   const stage = $("stage");
   const isFs = () => document.fullscreenElement === stage || document.webkitFullscreenElement === stage;
   let fill = false;
@@ -472,10 +473,11 @@ window.__jl = { st, search, loadPlaylist, download, play, videoId, playlistId, r
 
 /* ---------- boton ⤢ junto a la URL: zoom del reproductor en 3 niveles (pequeno / mediano / grande) ---------- */
 {
+  const $ = (id) => document.getElementById(id);
   const row = document.querySelector(".player-row");
   const set = (n) => {
     row.classList.remove("z1", "z2"); if (n) row.classList.add("z" + n);
-    $("b-big").textContent = `⤢${n + 1}/3`;
+    $("b-big").title = `Zoom del reproductor: nivel ${n + 1} de 3 (pulsa para cambiar)`;
     try { localStorage.setItem("jl_zoom", String(n)); } catch (e) {}
   };
   let level = 0;
