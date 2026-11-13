@@ -85,4 +85,5 @@ dialog.wide menu button{width:auto}
 .stage:fullscreen #z-in,.stage:fullscreen #z-out,.stage:-webkit-full-screen #z-in,.stage:-webkit-full-screen #z-out{display:inline-block}
 .player video{object-fit:contain}
 .stage.fill .player video{object-fit:cover}
-.player-row.big .stage{width:min(100%,calc(65vh*16/9))}.player-row.big .side{flex-basis:100%}
+.player-row.z1 .stage{width:min(100%,calc(45vh*16/9),720px)}
+.player-row.z2 .stage{width:min(100%,calc(65vh*16/9))}.player-row.z2 .side{flex-basis:100%}

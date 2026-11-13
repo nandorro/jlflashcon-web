@@ -470,13 +470,16 @@ window.__jl = { st, search, loadPlaylist, download, play, videoId, playlistId, r
   }, { passive: true });
 })();
 
-/* ---------- boton ⤢ junto a la URL: agranda / reduce el reproductor ---------- */
+/* ---------- boton ⤢ junto a la URL: zoom del reproductor en 3 niveles (pequeno / mediano / grande) ---------- */
 {
   const row = document.querySelector(".player-row");
-  const set = (on) => {
-    row.classList.toggle("big", on); $("b-big").textContent = on ? "⤡" : "⤢";
-    try { localStorage.setItem("jl_big", on ? "1" : "0"); } catch (e) {}
+  const set = (n) => {
+    row.classList.remove("z1", "z2"); if (n) row.classList.add("z" + n);
+    $("b-big").textContent = `⤢${n + 1}/3`;
+    try { localStorage.setItem("jl_zoom", String(n)); } catch (e) {}
   };
-  $("b-big").onclick = () => set(!row.classList.contains("big"));
-  try { if (localStorage.getItem("jl_big") === "1") set(true); } catch (e) {}
+  let level = 0;
+  try { level = Math.min(2, Math.max(0, parseInt(localStorage.getItem("jl_zoom") || "0", 10) || 0)); } catch (e) {}
+  $("b-big").onclick = () => { level = (level + 1) % 3; set(level); };
+  set(level);
 }
