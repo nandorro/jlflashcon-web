@@ -469,3 +469,14 @@ window.__jl = { st, search, loadPlaylist, download, play, videoId, playlistId, r
     }
   }, { passive: true });
 })();
+
+/* ---------- boton ⤢ junto a la URL: agranda / reduce el reproductor ---------- */
+{
+  const row = document.querySelector(".player-row");
+  const set = (on) => {
+    row.classList.toggle("big", on); $("b-big").textContent = on ? "⤡" : "⤢";
+    try { localStorage.setItem("jl_big", on ? "1" : "0"); } catch (e) {}
+  };
+  $("b-big").onclick = () => set(!row.classList.contains("big"));
+  try { if (localStorage.getItem("jl_big") === "1") set(true); } catch (e) {}
+}
