@@ -198,9 +198,9 @@ function renderList() {
       li.append(w);
     }
     const b = document.createElement("div"); b.className = "btns";
-    const mk = (txt, fn) => { const x = document.createElement("button"); x.type = "button"; x.textContent = txt; x.onclick = fn; b.append(x); };
+    const mk = (txt, fn, tip) => { const x = document.createElement("button"); x.type = "button"; x.textContent = txt; x.onclick = fn; if (tip) x.title = tip; b.append(x); };
     if (e.kind === "playlist") mk("📃 Abrir lista", () => openPlaylist(e.id));
-    else { mk("▶ Ver", () => play(e.id)); mk("⬇ MP3", () => download([e.id], "mp3")); mk("⬇ MP4", () => download([e.id], "mp4")); }
+    else { mk("▶ Ver", () => play(e.id)); mk("⬇ MP3", () => download([e.id], "mp3")); mk("📱 iPhone", () => download([e.id], "iphone"), "MP3 de 39 segundos desde el segundo 40"); mk("⬇ MP4", () => download([e.id], "mp4")); }
     li.append(b);
     li.addEventListener("contextmenu", (ev) => { ev.preventDefault(); rowMenu(ev.clientX, ev.clientY, e); });
     longPress(li, (x, y) => rowMenu(x, y, e));
@@ -214,7 +214,7 @@ function updateAllButtons() {
     $("r-bis").dataset.n = st.entries.length; $("r-ab").value = 1; $("r-bis").value = st.entries.length;
   }
   const on = canAll() && !st.busy;
-  $("b-all-mp3").disabled = !on; $("b-all-mp4").disabled = !on; $("b-range").disabled = !on; $("b-iphone").disabled = st.busy;
+  $("b-all-mp3").disabled = !on; $("b-all-mp4").disabled = !on; $("b-range").disabled = !on;
 }
 
 /* ---------- menu copiar (boton derecho / pulsacion larga) ---------- */
@@ -395,11 +395,6 @@ $("x-url").onclick = () => { resetPlayer(); $("url").focus(); };
 $("x-pl").onclick = () => { $("plurl").value = ""; st.plTok++; $("b-load").disabled = false; if (st.source === "playlist") clearList(); setStatus(""); $("plurl").focus(); };
 $("x-sv").onclick = () => { $("q-video").value = $("a-video").value = ""; cancelSearch("search_video"); $("q-video").focus(); };
 $("x-sl").onclick = () => { $("q-list").value = $("a-list").value = ""; cancelSearch("search_list"); $("q-list").focus(); };
-$("b-iphone").onclick = () => {
-  const id = st.playing || videoId($("url").value);
-  if (!id) { setStatus("Primero abre un vídeo (pulsa ▶ Ver) para descargar su trozo en MP3."); return; }
-  download([id], "iphone");
-};
 $("b-all-mp3").onclick = () => download(st.entries.filter((e) => e.kind !== "playlist").map((e) => e.id), "mp3");
 $("c-srv").checked = srvMode();
 $("c-srv").onchange = () => { try { localStorage.setItem("jl_srvplay", $("c-srv").checked ? "1" : "0"); } catch (e) {} };
