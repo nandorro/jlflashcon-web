@@ -347,14 +347,14 @@ async function downloadOne(id, kind, onProgress) {
   const r = await fetch(`${st.server}/api/download?${q}`);
   if (!r.ok) { const j = await r.json().catch(() => ({})); throw new Error(j.error || `HTTP ${r.status}`); }
   const total = +r.headers.get("Content-Length") || 0;
-  const name = decodeURIComponent(r.headers.get("X-Filename") || `${id}.${kind === "mp3" ? "mp3" : "mp4"}`);
+  const name = decodeURIComponent(r.headers.get("X-Filename") || `${id}.${kind === "mp4" ? "mp4" : "mp3"}`);
   const reader = r.body.getReader(); const chunks = []; let got = 0;
   for (;;) {
     const { done, value } = await reader.read(); if (done) break;
     chunks.push(value); got += value.length;
     if (total) onProgress(Math.round((got * 100) / total));
   }
-  saveBlob(new Blob(chunks, { type: kind === "mp3" ? "audio/mpeg" : "video/mp4" }), name);
+  saveBlob(new Blob(chunks, { type: kind === "mp4" ? "video/mp4" : "audio/mpeg" }), name);
   return name;
 }
 async function download(ids, kind) {
@@ -395,7 +395,7 @@ $("x-sv").onclick = () => { $("q-video").value = $("a-video").value = ""; cancel
 $("x-sl").onclick = () => { $("q-list").value = $("a-list").value = ""; cancelSearch("search_list"); $("q-list").focus(); };
 $("b-iphone").onclick = () => {
   const id = st.playing || videoId($("url").value);
-  if (!id) { setStatus("Primero abre un vídeo (pulsa ▶ Ver) para descargar su trozo de iPhone."); return; }
+  if (!id) { setStatus("Primero abre un vídeo (pulsa ▶ Ver) para descargar su trozo en MP3."); return; }
   download([id], "iphone");
 };
 $("b-all-mp3").onclick = () => download(st.entries.filter((e) => e.kind !== "playlist").map((e) => e.id), "mp3");
