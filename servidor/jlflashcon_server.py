@@ -37,7 +37,7 @@ ID_RE = re.compile(r"^[A-Za-z0-9_-]{11}$")
 PL_RE = re.compile(r"^(PL|UU|OL|FL|LL|RD)[A-Za-z0-9_-]{10,}$")
 PL_PREFIXES = ("PL", "UU", "OL", "FL", "LL", "RD")
 MAX_RESULTS = 50
-IPHONE_START, IPHONE_END = 40, 79  # boton iPhone: 39 segundos desde el segundo 40
+IPHONE_START, IPHONE_END = 60, 89  # boton iPhone: MP3 de 29 segundos, del 1:00 al 1:29
 DEFAULT_ORIGINS = {"https://nandorro.github.io"}
 ALLOWED = set(DEFAULT_ORIGINS)
 
@@ -235,7 +235,7 @@ def download(vid, kind, quality, folder, with_id=False):
     if kind in ("mp3", "iphone"):
         opts["format"] = "bestaudio/best"
         opts["postprocessors"] = [{"key": "FFmpegExtractAudio", "preferredcodec": "mp3", "preferredquality": "192"}]
-        if kind == "iphone":  # boton iPhone: MP3 de solo 39 segundos, desde el segundo 40
+        if kind == "iphone":  # boton iPhone: MP3 de solo 29 segundos, del 1:00 al 1:29
             opts["download_ranges"] = yt_dlp.utils.download_range_func(None, [(IPHONE_START, IPHONE_END)])
             opts["force_keyframes_at_cuts"] = True
             opts["outtmpl"] = str(Path(folder) / f"%(title).100s [iPhone {IPHONE_START}s-{IPHONE_END}s].%(ext)s")

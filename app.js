@@ -198,9 +198,9 @@ function renderList() {
       li.append(w);
     }
     const b = document.createElement("div"); b.className = "btns";
-    const mk = (txt, fn, tip) => { const x = document.createElement("button"); x.type = "button"; x.textContent = txt; x.onclick = fn; if (tip) x.title = tip; b.append(x); };
+    const mk = (txt, fn, tip) => { const x = document.createElement("button"); x.type = "button"; x.textContent = txt; x.onclick = fn; if (tip) x.title = tip; b.append(x); return x; };
     if (e.kind === "playlist") mk("📃 Abrir lista", () => openPlaylist(e.id));
-    else { mk("▶ Ver", () => play(e.id)); mk("⬇ MP3", () => download([e.id], "mp3")); mk("📱 iPhone", () => download([e.id], "iphone"), "MP3 de 39 segundos desde el segundo 40"); mk("⬇ MP4", () => download([e.id], "mp4")); }
+    else { mk("▶ Ver", () => play(e.id)); mk("⬇ MP3", () => download([e.id], "mp3")); mk("📱 iPhone", () => download([e.id], "iphone"), "MP3 de 29 segundos: del 1:00 al 1:29").classList.add("iph"); mk("⬇ MP4", () => download([e.id], "mp4")); }
     li.append(b);
     li.addEventListener("contextmenu", (ev) => { ev.preventDefault(); rowMenu(ev.clientX, ev.clientY, e); });
     longPress(li, (x, y) => rowMenu(x, y, e));
