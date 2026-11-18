@@ -246,7 +246,7 @@ document.addEventListener("click", (ev) => { if (!ev.target.closest(".ctx")) hid
 document.addEventListener("keydown", (ev) => { if (ev.key === "Escape") hideMenus(); });
 
 /* ---------- historial de busquedas (al pulsar ESPACIO) ---------- */
-const HIST_MAX = 30;
+const HIST_MAX = 20; // titulos que recuerda cada buscador
 const hist = {
   all() { return store.get("jl_hist", {}); },
   list(k) { return hist.all()[k] || []; },
@@ -274,6 +274,8 @@ function attachHistory(input) {
   };
   input.addEventListener("input", () => { if (/\s$/.test(input.value) || input.value === "") { if (input.value !== "") show(); } });
   input.addEventListener("keydown", (ev) => { if (ev.key === "ArrowDown") show(); });
+  input.addEventListener("focus", () => { if (!input.value.trim()) show(); });  // campo vacio: ver el historial
+  input.addEventListener("click", () => { if (!input.value.trim()) show(); });
   input.addEventListener("blur", () => setTimeout(() => { $("hist").hidden = true; }, 150));
 }
 document.querySelectorAll("input[data-hist]").forEach(attachHistory);
