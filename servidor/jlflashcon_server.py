@@ -37,6 +37,7 @@ ID_RE = re.compile(r"^[A-Za-z0-9_-]{11}$")
 PL_RE = re.compile(r"^(PL|UU|OL|FL|LL|RD)[A-Za-z0-9_-]{10,}$")
 PL_PREFIXES = ("PL", "UU", "OL", "FL", "LL", "RD")
 MAX_RESULTS = 50
+IPHONE_START, IPHONE_END = 40, 79  # boton iPhone: 39 segundos desde el segundo 40
 DEFAULT_ORIGINS = {"https://nandorro.github.io"}
 ALLOWED = set(DEFAULT_ORIGINS)
 
@@ -234,6 +235,15 @@ def download(vid, kind, quality, folder, with_id=False):
     if kind == "mp3":
         opts["format"] = "bestaudio/best"
         opts["postprocessors"] = [{"key": "FFmpegExtractAudio", "preferredcodec": "mp3", "preferredquality": "192"}]
+    elif kind == "iphone":
+        # boton iPhone: MP4 compatible con iPhone (H.264 + AAC), solo 39 segundos desde el segundo 40
+        h = re.sub(r"\D", "", quality) or "1080"
+        opts["format"] = (f"bestvideo[height<={h}][vcodec^=avc1]+bestaudio[ext=m4a]/"
+                          f"bestvideo[height<={h}][ext=mp4]+bestaudio[ext=m4a]/best[height<={h}][ext=mp4]/best")
+        opts["merge_output_format"] = "mp4"
+        opts["download_ranges"] = yt_dlp.utils.download_range_func(None, [(IPHONE_START, IPHONE_END)])
+        opts["force_keyframes_at_cuts"] = True
+        opts["outtmpl"] = str(Path(folder) / f"%(title).100s [iPhone {IPHONE_START}s-{IPHONE_END}s].%(ext)s")
     else:
         h = re.sub(r"\D", "", quality) or "1080"
         opts["format"] = (f"bestvideo[height<={h}][ext=mp4]+bestaudio[ext=m4a]/"
@@ -241,9 +251,10 @@ def download(vid, kind, quality, folder, with_id=False):
         opts["merge_output_format"] = "mp4"
     with yt_dlp.YoutubeDL(opts) as ydl:
         ydl.download([f"https://www.youtube.com/watch?v={vid}"])
-    files = [f for f in Path(folder).iterdir() if f.suffix.lower() == f".{kind}"]
+    ext = "mp3" if kind == "mp3" else "mp4"
+    files = [f for f in Path(folder).iterdir() if f.suffix.lower() == f".{ext}"]
     if not files:
-        raise RuntimeError(f"No se generó el archivo .{kind}")
+        raise RuntimeError(f"No se generó el archivo .{ext}")
     return files[0]
 
 
@@ -360,7 +371,7 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_download(self, q):
         vid, kind = q.get("id", ""), q.get("kind", "mp4")
-        if not ID_RE.match(vid) or kind not in ("mp3", "mp4"):
+        if not ID_RE.match(vid) or kind not in ("mp3", "mp4", "iphone"):
             return self.json(400, {"error": "petición no válida"})
         tmp = tempfile.mkdtemp(prefix="jlflash_")
         try:

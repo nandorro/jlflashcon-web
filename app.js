@@ -214,7 +214,7 @@ function updateAllButtons() {
     $("r-bis").dataset.n = st.entries.length; $("r-ab").value = 1; $("r-bis").value = st.entries.length;
   }
   const on = canAll() && !st.busy;
-  $("b-all-mp3").disabled = !on; $("b-all-mp4").disabled = !on; $("b-range").disabled = !on;
+  $("b-all-mp3").disabled = !on; $("b-all-mp4").disabled = !on; $("b-range").disabled = !on; $("b-iphone").disabled = st.busy;
 }
 
 /* ---------- menu copiar (boton derecho / pulsacion larga) ---------- */
@@ -347,7 +347,7 @@ async function downloadOne(id, kind, onProgress) {
   const r = await fetch(`${st.server}/api/download?${q}`);
   if (!r.ok) { const j = await r.json().catch(() => ({})); throw new Error(j.error || `HTTP ${r.status}`); }
   const total = +r.headers.get("Content-Length") || 0;
-  const name = decodeURIComponent(r.headers.get("X-Filename") || `${id}.${kind}`);
+  const name = decodeURIComponent(r.headers.get("X-Filename") || `${id}.${kind === "mp3" ? "mp3" : "mp4"}`);
   const reader = r.body.getReader(); const chunks = []; let got = 0;
   for (;;) {
     const { done, value } = await reader.read(); if (done) break;
@@ -393,6 +393,11 @@ $("x-url").onclick = () => { resetPlayer(); $("url").focus(); };
 $("x-pl").onclick = () => { $("plurl").value = ""; st.plTok++; $("b-load").disabled = false; if (st.source === "playlist") clearList(); setStatus(""); $("plurl").focus(); };
 $("x-sv").onclick = () => { $("q-video").value = $("a-video").value = ""; cancelSearch("search_video"); $("q-video").focus(); };
 $("x-sl").onclick = () => { $("q-list").value = $("a-list").value = ""; cancelSearch("search_list"); $("q-list").focus(); };
+$("b-iphone").onclick = () => {
+  const id = st.playing || videoId($("url").value);
+  if (!id) { setStatus("Primero abre un vídeo (pulsa ▶ Ver) para descargar su trozo de iPhone."); return; }
+  download([id], "iphone");
+};
 $("b-all-mp3").onclick = () => download(st.entries.filter((e) => e.kind !== "playlist").map((e) => e.id), "mp3");
 $("c-srv").checked = srvMode();
 $("c-srv").onchange = () => { try { localStorage.setItem("jl_srvplay", $("c-srv").checked ? "1" : "0"); } catch (e) {} };
