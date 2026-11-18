@@ -84,6 +84,21 @@
 <div id="menu" class="ctx" hidden></div>
 <div id="hist" class="ctx" hidden></div>
 
+<dialog id="dlg-iph">
+  <form method="dialog">
+    <h2>📱 iPhone</h2>
+    <p>¿Desde qué minuto y segundo? Se descargan 29 segundos en MP3.</p>
+    <div class="clip">
+      <label><input id="iph-min" type="number" min="0" max="999" inputmode="numeric" value="1"> min</label>
+      <label><input id="iph-sec" type="number" min="0" max="59" inputmode="numeric" value="0"> s</label>
+    </div>
+    <menu>
+      <button value="cancel">Cancelar</button>
+      <button id="iph-ok" value="ok">Descargar</button>
+    </menu>
+  </form>
+</dialog>
+
 <dialog id="dlg-settings">
   <form method="dialog">
     <h2>Servidor de descargas</h2>

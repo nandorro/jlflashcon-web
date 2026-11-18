@@ -88,3 +88,7 @@ dialog.wide menu button{width:auto}
 .player-row.z1 .stage{width:min(100%,calc(45vh*16/9),720px)}
 .player-row.z2 .stage{width:min(100%,calc(65vh*16/9))}.player-row.z2 .side{flex-basis:100%}
 #list .btns button.iph{min-width:110px}
+.clip{display:flex;gap:16px;justify-content:center;align-items:center;margin:14px 0}
+.clip label{display:flex;align-items:center;gap:8px;font-size:22px}
+dialog .clip input{width:5.2ch;margin:0;padding:12px 8px;font-size:40px;text-align:center;border-radius:12px}
+#dlg-iph menu button{padding:14px 22px;font-size:18px}

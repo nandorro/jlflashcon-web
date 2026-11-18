@@ -200,7 +200,7 @@ function renderList() {
     const b = document.createElement("div"); b.className = "btns";
     const mk = (txt, fn, tip) => { const x = document.createElement("button"); x.type = "button"; x.textContent = txt; x.onclick = fn; if (tip) x.title = tip; b.append(x); return x; };
     if (e.kind === "playlist") mk("📃 Abrir lista", () => openPlaylist(e.id));
-    else { mk("▶ Ver", () => play(e.id)); mk("⬇ MP3", () => download([e.id], "mp3")); mk("📱 iPhone", () => download([e.id], "iphone"), "MP3 de 29 segundos: del 1:00 al 1:29").classList.add("iph"); mk("⬇ MP4", () => download([e.id], "mp4")); }
+    else { mk("▶ Ver", () => play(e.id)); mk("⬇ MP3", () => download([e.id], "mp3")); mk("📱 iPhone", () => askIphone(e.id), "Pregunta el minuto y segundo y descarga 29 segundos en MP3").classList.add("iph"); mk("⬇ MP4", () => download([e.id], "mp4")); }
     li.append(b);
     li.addEventListener("contextmenu", (ev) => { ev.preventDefault(); rowMenu(ev.clientX, ev.clientY, e); });
     longPress(li, (x, y) => rowMenu(x, y, e));
@@ -344,8 +344,9 @@ function saveBlob(blob, name) {
   document.body.append(a); a.click(); a.remove();
   setTimeout(() => URL.revokeObjectURL(a.href), 60000);
 }
-async function downloadOne(id, kind, onProgress) {
+async function downloadOne(id, kind, onProgress, start) {
   const q = new URLSearchParams({ id, kind, q: $("quality").value });
+  if (start != null) q.set("start", String(start));
   const r = await fetch(`${st.server}/api/download?${q}`);
   if (!r.ok) { const j = await r.json().catch(() => ({})); throw new Error(j.error || `HTTP ${r.status}`); }
   const total = +r.headers.get("Content-Length") || 0;
@@ -359,7 +360,7 @@ async function downloadOne(id, kind, onProgress) {
   saveBlob(new Blob(chunks, { type: kind === "mp4" ? "video/mp4" : "audio/mpeg" }), name);
   return name;
 }
-async function download(ids, kind) {
+async function download(ids, kind, start) {
   if (!ids.length) return;
   if (!st.server) {
     setStatus("Para descargar necesitas el servidor de jlflashcon (botón ⚙): " +
@@ -376,13 +377,30 @@ async function download(ids, kind) {
     try {
       const name = await downloadOne(ids[i], kind, (p) => {
         $("bar").value = Math.round((i * 100 + p) / ids.length); setStatus(`${pre}Recibiendo… ${p}%`);
-      });
+      }, start);
       ok++; setStatus(`${pre}Guardado: ${name}`);
     } catch (e) { if (!firstErr) firstErr = friendlyError(e.message); }
   }
   st.busy = false; $("bar-wrap").hidden = true; updateAllButtons();
   setStatus(firstErr ? `Guardados ${ok} de ${ids.length}. Error: ${firstErr}`
     : ids.length === 1 ? "Guardado en tu carpeta de descargas" : `Listo: ${ok} de ${ids.length} guardados en tu carpeta de descargas`);
+}
+/* boton iPhone: pregunta minuto y segundo (campos grandes) y baja 29 segundos en MP3 desde ahi */
+function askIphone(id) {
+  const dlg = $("dlg-iph");
+  let last = [1, 0];
+  try { last = JSON.parse(localStorage.getItem("jl_iph") || "[1,0]"); } catch (e) {}
+  $("iph-min").value = last[0]; $("iph-sec").value = last[1];
+  dlg.onclose = () => {
+    if (dlg.returnValue !== "ok") return;
+    const m = Math.max(0, parseInt($("iph-min").value, 10) || 0);
+    const sec = Math.min(59, Math.max(0, parseInt($("iph-sec").value, 10) || 0));
+    try { localStorage.setItem("jl_iph", JSON.stringify([m, sec])); } catch (e) {}
+    download([id], "iphone", m * 60 + sec);
+  };
+  dlg.returnValue = "";
+  dlg.showModal();
+  $("iph-min").focus(); $("iph-min").select();
 }
 window.addEventListener("beforeunload", (ev) => { if (st.busy) { ev.preventDefault(); ev.returnValue = ""; } });
 

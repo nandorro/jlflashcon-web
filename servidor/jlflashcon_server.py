@@ -37,7 +37,7 @@ ID_RE = re.compile(r"^[A-Za-z0-9_-]{11}$")
 PL_RE = re.compile(r"^(PL|UU|OL|FL|LL|RD)[A-Za-z0-9_-]{10,}$")
 PL_PREFIXES = ("PL", "UU", "OL", "FL", "LL", "RD")
 MAX_RESULTS = 50
-IPHONE_START, IPHONE_END = 60, 89  # boton iPhone: MP3 de 29 segundos, del 1:00 al 1:29
+CLIP_SECONDS = 29  # boton iPhone: MP3 de 29 segundos desde el minuto/segundo que elija el usuario
 DEFAULT_ORIGINS = {"https://nandorro.github.io"}
 ALLOWED = set(DEFAULT_ORIGINS)
 
@@ -228,17 +228,18 @@ def watch_file(vid, quality):
 
 # ---------------------------------------------------------------- descarga
 
-def download(vid, kind, quality, folder, with_id=False):
+def download(vid, kind, quality, folder, with_id=False, start=60):
     name = "%(title).100s [%(id)s].%(ext)s" if with_id else "%(title).100s.%(ext)s"
     opts = {"outtmpl": str(Path(folder) / name), "noplaylist": True, "quiet": True,
             "no_warnings": True, "windowsfilenames": True}
     if kind in ("mp3", "iphone"):
         opts["format"] = "bestaudio/best"
         opts["postprocessors"] = [{"key": "FFmpegExtractAudio", "preferredcodec": "mp3", "preferredquality": "192"}]
-        if kind == "iphone":  # boton iPhone: MP3 de solo 29 segundos, del 1:00 al 1:29
-            opts["download_ranges"] = yt_dlp.utils.download_range_func(None, [(IPHONE_START, IPHONE_END)])
+        if kind == "iphone":  # boton iPhone: MP3 de solo 29 segundos desde `start` (segundos)
+            ini = max(0, int(start))
+            opts["download_ranges"] = yt_dlp.utils.download_range_func(None, [(ini, ini + CLIP_SECONDS)])
             opts["force_keyframes_at_cuts"] = True
-            opts["outtmpl"] = str(Path(folder) / f"%(title).100s [iPhone {IPHONE_START}s-{IPHONE_END}s].%(ext)s")
+            opts["outtmpl"] = str(Path(folder) / f"%(title).100s [iPhone {ini // 60}m{ini % 60:02d}s].%(ext)s")
     else:
         h = re.sub(r"\D", "", quality) or "1080"
         opts["format"] = (f"bestvideo[height<={h}][ext=mp4]+bestaudio[ext=m4a]/"
@@ -370,7 +371,8 @@ class Handler(BaseHTTPRequestHandler):
             return self.json(400, {"error": "petición no válida"})
         tmp = tempfile.mkdtemp(prefix="jlflash_")
         try:
-            f = download(vid, kind, q.get("q", "1080p"), tmp, with_id=q.get("named") == "1")
+            f = download(vid, kind, q.get("q", "1080p"), tmp, with_id=q.get("named") == "1",
+                         start=int(q.get("start", "60") or 60))
             size = f.stat().st_size
             self.send_response(200)
             self.cors()
